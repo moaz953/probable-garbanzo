@@ -1,0 +1,307 @@
+:root {
+  --key-size: 2.2cm;
+  --gap-size: 0.6cm;
+  /* Increased from 0.4cm for better mouse accuracy */
+  --font-size: 0.9cm;
+  --bg-color: #1a1a1a;
+  --key-bg: #333;
+  --key-color: #fff;
+  --hover-scale: 1.1;
+  --active-bg: #555;
+  --primary-color: #646cff;
+}
+
+/* ... existing body rules ... */
+
+/* Key Popup Effect */
+.key-popup {
+  position: absolute;
+  top: -2.5cm;
+  /* Above the key */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2.5cm;
+  height: 2.5cm;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50% 50% 5px 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2cm;
+  font-weight: bold;
+  pointer-events: none;
+  /* Let clicks pass through */
+  z-index: 100;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  animation: popIn 0.1s ease-out;
+}
+
+@keyframes popIn {
+  from {
+    transform: translateX(-50%) scale(0.5);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  /* Prevent horiz scroll if possible, but allow for overflow content */
+}
+
+#app {
+  width: 100%;
+  max-width: 100vw;
+  padding: 0.5rem;
+  /* Reduced padding */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  /* Reduced gap from 2rem */
+}
+
+/* ... headers ... */
+
+.output-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* Reduced gap */
+  align-items: center;
+}
+
+textarea#output {
+  width: 100%;
+  height: 80px;
+  /* Reduced from 150px ("makes the place smaller") */
+  padding: 0.8rem;
+  font-size: 1.5rem;
+  border-radius: 0.5rem;
+  border: 2px solid #444;
+  background: #222;
+  color: #fff;
+  resize: none;
+  font-family: inherit;
+}
+
+textarea#output:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+#suggestions {
+  display: flex;
+  gap: 1rem;
+  height: 2rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.suggestion-chip {
+  background: #444;
+  padding: 0.2rem 1rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.suggestion-chip:hover {
+  background: var(--primary-color);
+}
+
+#search-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.search-btn {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-btn:hover {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.action-btn {
+  background: #444;
+  /* Differentiate action buttons */
+  border-color: #666;
+}
+
+.action-btn:hover {
+  background: #2ecc71;
+  /* Green for success action */
+}
+
+.ai-btn {
+  background: #5b4b8a;
+  border-color: #7b6b9a;
+}
+
+.ai-btn:hover {
+  background: #8e44ad;
+}
+
+.danger-btn {
+  background: #c0392b;
+  border-color: #e74c3c;
+}
+
+.danger-btn:hover {
+  background: #e74c3c;
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(46, 204, 113, 0.9);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 2rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  z-index: 2000;
+  animation: fadeInOut 2s forwards;
+  pointer-events: none;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+}
+
+/* Keyboard Styles */
+.keyboard {
+  display: grid;
+  /* Use auto-fit or specific columns. For Arabic layout we usually have 11-12 keys per row. 
+     We'll use specific template columns based on the layout logic or just let grid handle it 
+     if we define rows. The prompt proposed grid-template-columns: repeat(10, 2.2cm); 
+     We will adjust dynamically in JS or make it flexible here. 
+     Let's use a max-width container and flex wrap or grid.
+     Actually, a strict grid is better for "muscle memory".
+     Let's assume the rows have varying key counts.
+     We will use flexbox for rows to allow centering, or a grid.
+     The prompt example used grid. Let's try flex rows for better centering of varying row lengths.
+  */
+  /* Force LTR so the first key in array (Top-Left) appears on the Left */
+  direction: ltr;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-size);
+  align-items: center;
+  background: #000;
+  padding: 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.keyboard-row {
+  display: flex;
+  gap: var(--gap-size);
+  justify-content: center;
+}
+
+.key {
+  width: var(--key-size);
+  height: var(--key-size);
+  font-size: var(--font-size);
+  border-radius: 0.4cm;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  background: var(--key-bg);
+  color: var(--key-color);
+  user-select: none;
+  transition: transform 0.1s, background-color 0.1s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.key:hover {
+  transform: scale(var(--hover-scale));
+  z-index: 10;
+  background: #444;
+}
+
+.key:active {
+  transform: scale(0.95);
+  background: var(--active-bg);
+}
+
+.key.special {
+  /* wide keys for space, enter etc */
+  width: auto;
+  padding: 0 1cm;
+  min-width: var(--key-size);
+}
+
+.key.space {
+  width: calc(var(--key-size) * 5);
+}
+
+/* Mobile Tweaks */
+@media (max-width: 600px) {
+  :root {
+    /* Slightly smaller on very small screens to fit, 
+       but we try to keep physical size logic. 
+       If screen < keyboard width, we need to scroll or shrink.
+       The prompt priority is physical size.
+       We will allow horizontal scroll if needed for strict physical size.
+    */
+  }
+
+  .keyboard {
+    overflow-x: auto;
+    max-width: 100%;
+    justify-content: flex-start;
+    /* Align left (rtl: right) so we can scroll */
+    padding-bottom: 2rem;
+  }
+}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مساعد الكتابة الذكي - AR-KEY</title>
+</head>
+
+<body>
+  <div id="app">
+    <header>
+      <h1>مساعد الكتابة الذكي</h1>
+    </header>
+
+    <main>
+      <div class="output-container">
+        <textarea id="output" placeholder="اكتب هنا..." dir="rtl"></textarea>
+        <div id="suggestions"></div>
+
+        <div id="search-actions">
+          <button id="btn-copy" class="search-btn action-btn">نسخ النص</button>
+          <button id="btn-clear" class="search-btn danger-btn">حذف الكل</button>
+          <button id="btn-google" class="search-btn">بحث Google</button>
+          <button id="btn-youtube" class="search-btn">بحث YouTube</button>
+          <button id="btn-chatgpt" class="search-btn ai-btn">ChatGPT</button>
+          <button id="btn-deepseek" class="search-btn ai-btn">DeepSeek</button>
+        </div>
+      </div>
+
+      <div id="keyboard" class="keyboard"></div>
+    </main>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
