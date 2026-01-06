@@ -1,264 +1,520 @@
-export class Keyboard {
-    constructor(containerId, onInput, onDelete, onSpace, onEnter, onDeleteWord) {
-        this.container = document.getElementById(containerId);
-        this.onInput = onInput;
-        this.onDelete = onDelete;
-        this.onSpace = onSpace;
-        this.onEnter = onEnter;
-        this.onDeleteWord = onDeleteWord;
+/**
+ * AR-KEY Professional Arabic Virtual Keyboard
+ * A feature-rich, accessible Arabic keyboard with haptic feedback,
+ * shift layer for diacritics, theming, and customizable settings.
+ * 
+ * @version 2.0.0
+ */
 
-        this.layout = [
-            ["ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "د"],
-            ["ش", "س", "ي", "ب", "ل", "ا", "ت", "ن", "م", "ك", "ط"],
-            ["ئ", "ء", "ؤ", "ر", "لا", "ى", "ة", "و", "ز", "ظ"]
-        ];
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const DEFAULT_SETTINGS = {
+    soundEnabled: true,
+    vibrationEnabled: true,
+    theme: 'dark',
+    keySize: 'medium' // small, medium, large
+};
+
+const KEY_SIZES = {
+    small: '1.8cm',
+    medium: '2.2cm',
+    large: '2.6cm'
+};
+
+// ============================================================================
+// EVENT EMITTER
+// ============================================================================
+
+class EventEmitter {
+    constructor() {
+        this.events = {};
+    }
+
+    on(event, callback) {
+        if (!this.events[event]) this.events[event] = [];
+        this.events[event].push(callback);
+        return () => this.off(event, callback);
+    }
+
+    off(event, callback) {
+        if (!this.events[event]) return;
+        this.events[event] = this.events[event].filter(cb => cb !== callback);
+    }
+
+    emit(event, ...args) {
+        if (!this.events[event]) return;
+        this.events[event].forEach(callback => callback(...args));
+    }
+}
+
+// ============================================================================
+// KEYBOARD CLASS
+// ============================================================================
+
+export class Keyboard extends EventEmitter {
+    constructor(containerId, callbacks = {}) {
+        super();
+
+        this.container = document.getElementById(containerId);
+        if (!this.container) {
+            throw new Error(`Keyboard container #${containerId} not found`);
+        }
+
+        // Callbacks
+        this.callbacks = {
+            onInput: callbacks.onInput || (() => { }),
+            onDelete: callbacks.onDelete || (() => { }),
+            onSpace: callbacks.onSpace || (() => { }),
+            onEnter: callbacks.onEnter || (() => { }),
+            onDeleteWord: callbacks.onDeleteWord || (() => { })
+        };
+
+        // State
+        this.isShiftActive = false;
+        this.settings = this.loadSettings();
+
+        // Keyboard layouts
+        this.layouts = {
+            primary: [
+                ["ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "د"],
+                ["ش", "س", "ي", "ب", "ل", "ا", "ت", "ن", "م", "ك", "ط"],
+                ["ذ", "ئ", "ء", "ؤ", "ر", "لا", "ى", "ة", "و", "ز", "ظ"]
+            ],
+            shift: [
+                ["َ", "ً", "ُ", "ٌ", "ِ", "ٍ", "ْ", "ّ", "»", "«", "÷", "×"],
+                ["{", "}", "[", "]", "،", "؛", "'", "\"", "؟", "!", ":"],
+                ["~", "٪", "@", "#", "$", "ـ", "-", "+", "=", "(", ")"]
+            ]
+        };
+
+        // Audio context (shared for performance)
+        this.audioContext = null;
 
         this.init();
     }
 
+    // ========================================================================
+    // INITIALIZATION
+    // ========================================================================
+
     init() {
+        this.initAudioContext();
+        this.applyTheme();
+        this.applyKeySize();
         this.render();
+        this.setupKeyboardShortcuts();
     }
+
+    initAudioContext() {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+                this.audioContext = new AudioContextClass();
+            }
+        } catch (e) {
+            console.warn("AudioContext initialization failed:", e);
+        }
+    }
+
+    // ========================================================================
+    // SETTINGS MANAGEMENT
+    // ========================================================================
+
+    loadSettings() {
+        try {
+            const saved = localStorage.getItem('ar-key-settings');
+            return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_SETTINGS };
+        } catch {
+            return { ...DEFAULT_SETTINGS };
+        }
+    }
+
+    saveSettings() {
+        try {
+            localStorage.setItem('ar-key-settings', JSON.stringify(this.settings));
+        } catch (e) {
+            console.warn("Failed to save settings:", e);
+        }
+    }
+
+    updateSetting(key, value) {
+        this.settings[key] = value;
+        this.saveSettings();
+
+        if (key === 'theme') this.applyTheme();
+        if (key === 'keySize') this.applyKeySize();
+
+        this.emit('settingsChanged', { key, value });
+    }
+
+    // ========================================================================
+    // THEMING
+    // ========================================================================
+
+    applyTheme() {
+        document.documentElement.setAttribute('data-theme', this.settings.theme);
+    }
+
+    toggleTheme() {
+        const newTheme = this.settings.theme === 'dark' ? 'light' : 'dark';
+        this.updateSetting('theme', newTheme);
+    }
+
+    applyKeySize() {
+        const size = KEY_SIZES[this.settings.keySize] || KEY_SIZES.medium;
+        document.documentElement.style.setProperty('--key-size', size);
+    }
+
+    // ========================================================================
+    // RENDERING
+    // ========================================================================
 
     render() {
         this.container.innerHTML = '';
+        this.container.setAttribute('role', 'application');
+        this.container.setAttribute('aria-label', 'لوحة مفاتيح عربية');
 
-        this.layout.forEach(rowChars => {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'keyboard-row';
+        const currentLayout = this.isShiftActive ? this.layouts.shift : this.layouts.primary;
+
+        // Render character rows
+        currentLayout.forEach((rowChars, rowIndex) => {
+            const row = this.createRow();
+            row.setAttribute('role', 'group');
+            row.setAttribute('aria-label', `الصف ${rowIndex + 1}`);
 
             rowChars.forEach(char => {
-                const key = this.createKey(char);
-                rowDiv.appendChild(key);
+                row.appendChild(this.createCharacterKey(char));
             });
 
-            this.container.appendChild(rowDiv);
+            this.container.appendChild(row);
         });
 
-        // Add fourth row for Space and Controls
-        const controlRow = document.createElement('div');
-        controlRow.className = 'keyboard-row';
-
-        // Backspace
-        const bkspKey = this.createKey("⌫", "special"); // Backspace on Left as requested
-
-        let deleteTimer = null;
-        let deleteInterval = null;
-
-        const clearDelete = () => {
-            clearTimeout(deleteTimer);
-            clearInterval(deleteInterval);
-        };
-
-        const startRapidDelete = (e) => {
-            // Prevent default browser behaviors (selection, etc.)
-            if (e.cancelable) e.preventDefault();
-            e.stopPropagation();
-
-            // 1. Initial Delete
-            this.handleInteraction(null, 'delete');
-            this.triggerFeedback(); // Feedback for first press
-
-            // 2. Setup Long Press (Rapid Fire)
-            clearDelete(); // clear any existing
-
-            const startTime = Date.now();
-
-            deleteTimer = setTimeout(() => {
-                deleteInterval = setInterval(() => {
-                    const elapsed = Date.now() - startTime;
-
-                    // After 1.5s of holding, switch to WORD deletion
-                    if (elapsed > 1500) {
-                        this.handleInteraction(null, 'deleteWord');
-                        if (navigator.vibrate) navigator.vibrate(10); // Stronger vibrate
-                    } else {
-                        this.handleInteraction(null, 'delete');
-                        if (navigator.vibrate) navigator.vibrate(5);
-                    }
-                }, 100); // 100ms speed
-            }, 500); // 500ms delay before rapid fire
-        };
-
-        // Use pointerdown for both Mouse and Touch to enable Long Press
-        bkspKey.addEventListener('pointerdown', startRapidDelete);
-
-        // Stop on release or leaving the key
-        bkspKey.addEventListener('pointerup', clearDelete);
-        bkspKey.addEventListener('pointerout', clearDelete);
-        bkspKey.addEventListener('pointercancel', clearDelete);
-
-        // Thal (ذ) Key - Moved here as requested
-        const thalKey = this.createKey("ذ");
-        thalKey.addEventListener('pointerdown', (e) => {
-            this.triggerFeedback();
-            thalKey.classList.add('active');
-            this.showPopup(thalKey, "ذ");
-            this.handleInteraction("ذ", 'input');
-        });
-        // Add cleanup for active state if needed? createKey handles style?
-        // createKey doesn't handle "active" class removal automatically for custom listeners unless we rely on CSS :active?
-        // Actually our createKey implementation handles "click" usually. 
-        // But for consistency with "instant pointerdown" pattern:
-        thalKey.addEventListener('pointerup', () => thalKey.classList.remove('active'));
-        thalKey.addEventListener('pointerout', () => thalKey.classList.remove('active'));
-
-
-        // Space
-        const spaceKey = this.createKey("مسافة", "special space");
-        spaceKey.innerText = "_________";
-        spaceKey.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'mouse') { e.preventDefault(); this.handleInteraction(' ', 'input'); }
-        });
-        spaceKey.addEventListener('click', (e) => {
-            if (e.pointerType !== 'mouse') this.handleInteraction(' ', 'input');
-        });
-
-        // Enter
-        // "Arrow make it like computer" -> Standard Enter Arrow ↵
-        const enterKey = this.createKey("↵", "special");
-        enterKey.title = "Enter";
-        enterKey.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'mouse') { e.preventDefault(); this.handleInteraction(null, 'enter'); }
-        });
-        enterKey.addEventListener('click', (e) => {
-            if (e.pointerType !== 'mouse') this.handleInteraction(null, 'enter');
-        });
-
-        // Order: [Backspace] [Thal] [Space] [Enter]
-        controlRow.appendChild(bkspKey);
-        controlRow.appendChild(thalKey);
-        controlRow.appendChild(spaceKey);
-        controlRow.appendChild(enterKey);
-        this.container.appendChild(controlRow);
+        // Render control row
+        this.container.appendChild(this.createControlRow());
     }
 
-    createKey(char, extraClass = '') {
-        const key = document.createElement('div');
-        key.className = `key ${extraClass}`;
+    createRow() {
+        const row = document.createElement('div');
+        row.className = 'keyboard-row';
+        return row;
+    }
+
+    // ========================================================================
+    // KEY CREATION
+    // ========================================================================
+
+    createCharacterKey(char) {
+        const key = document.createElement('button');
+        key.type = 'button';
+        key.className = 'key';
         key.innerText = char;
+        key.setAttribute('aria-label', char);
+        key.setAttribute('data-char', char);
 
-        // Touch and Click handling
-        // We use click for simplicity, but for "accessible" touch interaction, touchstart might be better for responsiveness.
-        // However, fast click logic is handled by browsers well now.
-        // Let's stick to click but add vibration.
-
-        // Note: handling both 'click' and 'touchstart' might cause double events. 
-        // We'll rely on 'click' which covers tap. 
-        // But for the "Vibrate" and "Sound" immediate feedback, maybe 'pointerdown'?
+        let wasPointerDown = false;
 
         key.addEventListener('pointerdown', (e) => {
+            wasPointerDown = true;
             this.triggerFeedback();
             key.classList.add('active');
+            this.showPopup(key, char);
 
-            // Show Popup
-            if (!extraClass.includes('special')) {
-                this.showPopup(key, char);
-            }
-
-            // Instant typing for Mouse users (User Request: "Writing is with the mouse")
-            // This makes it feel much snappier than waiting for 'click' (mouseup).
             if (e.pointerType === 'mouse') {
-                e.preventDefault(); // Prevent text selection or focus loss
-                if (!extraClass.includes('special')) {
-                    this.handleInteraction(char, 'input');
-                }
+                e.preventDefault();
+                this.handleInput(char);
             }
         });
 
-        key.addEventListener('pointerup', () => {
-            key.classList.remove('active');
-        });
+        key.addEventListener('pointerup', () => key.classList.remove('active'));
+        key.addEventListener('pointerout', () => key.classList.remove('active'));
 
-        key.addEventListener('pointerout', () => {
-            key.classList.remove('active');
-        });
-
-        // Handle Click (mostly for Touch where we want to scroll support, 
-        // or if pointerdown didn't fire input)
         key.addEventListener('click', (e) => {
-            // If it was a mouse click, we already handled it in pointerdown.
-            // We only process if it wasn't handled (e.g., touch tap).
-            if (e.pointerType === 'mouse') return;
-
-            if (!extraClass.includes('special')) {
-                this.handleInteraction(char, 'input');
+            if (wasPointerDown && e.pointerType !== 'mouse') {
+                this.handleInput(char);
             }
+            wasPointerDown = false;
         });
 
         return key;
     }
 
-    handleInteraction(val, type) {
-        if (type === 'input') {
-            this.onInput(val);
-        } else if (type === 'delete') {
-            this.onDelete();
-        } else if (type === 'deleteWord') {
-            // Need to add this callback to constructor or just expose it?
-            // Constructor signature: (containerId, onInput, onDelete, onSpace, onEnter)
-            // I'll assume onDelete can handle a "mode" or I add a new param.
-            // To avoid breaking constructor signature too much, let's just make onDelete accept an arg or check main.js
-            // But main.js passes `deleteText`.
-            // Let's modify `main.js` to accept a count or mode.
-            // For now, let's assume `this.onDelete` handles basic char. We need `this.onDeleteWord`.
-            // I'll emit a custom event or just modify constructor.
-            // Modifying constructor is cleaner.
-            if (this.onDeleteWord) this.onDeleteWord();
-        } else if (type === 'enter') {
-            this.onEnter();
+    createControlRow() {
+        const controlRow = this.createRow();
+        controlRow.classList.add('control-row');
+
+        // Shift Key
+        const shiftKey = this.createFunctionKey('⇧', 'shift-key', () => {
+            this.toggleShift();
+        });
+        shiftKey.setAttribute('aria-pressed', this.isShiftActive);
+        shiftKey.title = this.isShiftActive ? 'إلغاء التشكيل' : 'التشكيل والرموز';
+        if (this.isShiftActive) shiftKey.classList.add('active-toggle');
+
+        // Backspace Key with long-press
+        const bkspKey = this.createBackspaceKey();
+
+        // Space Key
+        const spaceKey = this.createFunctionKey('', 'space', () => {
+            this.handleInput(' ');
+        });
+        spaceKey.innerHTML = '<span class="space-label">مسافة</span>';
+        spaceKey.title = 'مسافة';
+
+        // Enter Key
+        const enterKey = this.createFunctionKey('↵', '', () => {
+            this.callbacks.onEnter();
+        });
+        enterKey.title = 'سطر جديد';
+
+        // Settings Key
+        const settingsKey = this.createFunctionKey('⚙️', 'settings-key', () => {
+            this.emit('openSettings');
+        });
+        settingsKey.title = 'الإعدادات';
+
+        controlRow.append(shiftKey, bkspKey, spaceKey, enterKey, settingsKey);
+        return controlRow;
+    }
+
+    createFunctionKey(label, extraClass, handler) {
+        const key = document.createElement('button');
+        key.type = 'button';
+        key.className = `key special ${extraClass}`.trim();
+        key.innerText = label;
+
+        let wasPointerDown = false;
+
+        key.addEventListener('pointerdown', (e) => {
+            wasPointerDown = true;
+            this.triggerFeedback();
+            key.classList.add('active');
+
+            if (e.pointerType === 'mouse') {
+                e.preventDefault();
+                handler();
+            }
+        });
+
+        key.addEventListener('pointerup', () => key.classList.remove('active'));
+        key.addEventListener('pointerout', () => key.classList.remove('active'));
+
+        key.addEventListener('click', (e) => {
+            if (wasPointerDown && e.pointerType !== 'mouse') {
+                handler();
+            }
+            wasPointerDown = false;
+        });
+
+        return key;
+    }
+
+    createBackspaceKey() {
+        const key = document.createElement('button');
+        key.type = 'button';
+        key.className = 'key special backspace-key';
+        key.innerHTML = '<span>⌫</span>';
+        key.title = 'حذف';
+        key.setAttribute('aria-label', 'حذف');
+
+        let deleteTimer = null;
+        let deleteInterval = null;
+        let startTime = 0;
+
+        const clearDelete = () => {
+            clearTimeout(deleteTimer);
+            clearInterval(deleteInterval);
+            deleteTimer = null;
+            deleteInterval = null;
+            key.classList.remove('active');
+        };
+
+        const startRapidDelete = (e) => {
+            if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
+
+            this.callbacks.onDelete();
+            this.triggerFeedback();
+            key.classList.add('active');
+
+            clearDelete();
+            startTime = Date.now();
+
+            deleteTimer = setTimeout(() => {
+                deleteInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+
+                    if (elapsed > 1500) {
+                        this.callbacks.onDeleteWord();
+                        this.vibrate(15);
+                    } else {
+                        this.callbacks.onDelete();
+                        this.vibrate(5);
+                    }
+                }, 80);
+            }, 400);
+        };
+
+        key.addEventListener('pointerdown', startRapidDelete);
+        key.addEventListener('pointerup', clearDelete);
+        key.addEventListener('pointerout', clearDelete);
+        key.addEventListener('pointercancel', clearDelete);
+
+        return key;
+    }
+
+    // ========================================================================
+    // SHIFT FUNCTIONALITY
+    // ========================================================================
+
+    toggleShift() {
+        this.isShiftActive = !this.isShiftActive;
+        this.render();
+        this.emit('shiftToggled', this.isShiftActive);
+    }
+
+    // ========================================================================
+    // INPUT HANDLING
+    // ========================================================================
+
+    handleInput(char) {
+        this.callbacks.onInput(char);
+        this.emit('input', char);
+    }
+
+    // ========================================================================
+    // KEYBOARD SHORTCUTS
+    // ========================================================================
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') {
+                if (!this.isShiftActive) this.toggleShift();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') {
+                if (this.isShiftActive) this.toggleShift();
+            }
+        });
+    }
+
+    // ========================================================================
+    // FEEDBACK
+    // ========================================================================
+
+    vibrate(duration = 20) {
+        if (!this.settings.vibrationEnabled) return;
+        if (navigator.vibrate) {
+            try {
+                navigator.vibrate(duration);
+            } catch { /* Ignore */ }
         }
     }
 
     triggerFeedback() {
-        // Vibrate
-        if (navigator.vibrate) {
-            try { navigator.vibrate(20); } catch (e) { /* ignore */ }
-        }
-
-        // Sound - Web Audio API (Simple "Click" Pop)
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (AudioContext) {
-                const ctx = new AudioContext();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.05);
-
-                gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start();
-                osc.stop(ctx.currentTime + 0.05);
-            }
-        } catch (e) {
-            console.error("Audio feedback failed", e);
+        this.vibrate(15);
+        if (this.settings.soundEnabled) {
+            this.playClickSound();
         }
     }
 
+    playClickSound() {
+        if (!this.audioContext) return;
+
+        try {
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            const now = this.audioContext.currentTime;
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.04);
+        } catch { /* Ignore audio errors */ }
+    }
+
+    // ========================================================================
+    // KEY POPUP
+    // ========================================================================
+
     showPopup(keyElement, char) {
-        if (!keyElement) return;
+        if (!keyElement || this.isShiftActive) return;
+
         const existing = keyElement.querySelector('.key-popup');
         if (existing) existing.remove();
 
         const popup = document.createElement('div');
         popup.className = 'key-popup';
         popup.innerText = char;
+        popup.setAttribute('aria-hidden', 'true');
 
-        // Ensure relative positioning
         if (getComputedStyle(keyElement).position === 'static') {
             keyElement.style.position = 'relative';
         }
+
         keyElement.appendChild(popup);
 
-        setTimeout(() => {
-            popup.remove();
-        }, 200);
+        requestAnimationFrame(() => {
+            setTimeout(() => popup.remove(), 180);
+        });
     }
+
+    // ========================================================================
+    // PUBLIC API
+    // ========================================================================
+
+    getSettings() {
+        return { ...this.settings };
+    }
+
+    setSound(enabled) {
+        this.updateSetting('soundEnabled', enabled);
+    }
+
+    setVibration(enabled) {
+        this.updateSetting('vibrationEnabled', enabled);
+    }
+
+    setKeySize(size) {
+        if (KEY_SIZES[size]) {
+            this.updateSetting('keySize', size);
+        }
+    }
+
+    destroy() {
+        if (this.audioContext) {
+            this.audioContext.close();
+        }
+        this.container.innerHTML = '';
+        this.events = {};
+    }
+}
+
+// ============================================================================
+// FACTORY FUNCTION (Backward Compatibility)
+// ============================================================================
+
+export function createKeyboard(containerId, onInput, onDelete, onSpace, onEnter, onDeleteWord) {
+    return new Keyboard(containerId, {
+        onInput,
+        onDelete,
+        onSpace,
+        onEnter,
+        onDeleteWord
+    });
 }

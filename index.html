@@ -4,37 +4,66 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>كيبورد عربي ذكي على الويب</title>
-  <meta name="description" content="كيبورد عربي ذكي على الويب مع تباعد أحرف بالسنتيمتر لسهولة الكتابة. مناسب للجميع.">
-  <meta name="robots" content="index, follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- SEO -->
+  <title>AR-KEY | كيبورد عربي ذكي احترافي</title>
+  <meta name="description"
+    content="لوحة مفاتيح عربية احترافية على الويب مع تشكيل ذكي، اقتراحات نصية، وتصميم عصري. مناسبة للجميع." />
+  <meta name="keywords" content="كيبورد عربي, لوحة مفاتيح, عربي, تشكيل, Arabic keyboard, virtual keyboard" />
+  <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://arabickeypro.vercel.app/" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="AR-KEY | كيبورد عربي ذكي" />
+  <meta property="og:description" content="لوحة مفاتيح عربية احترافية مع تشكيل واقتراحات ذكية" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://arabickeypro.vercel.app/" />
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
 </head>
 
 <body>
   <div id="app">
     <header>
-      <h1>مساعد الكتابة الذكي</h1>
+      <h1>🔤 AR-KEY</h1>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.3rem;">لوحة مفاتيح عربية ذكية</p>
     </header>
 
     <main>
       <div class="output-container">
-        <textarea id="output" placeholder="اكتب هنا..." dir="rtl"></textarea>
+        <textarea id="output" placeholder="اكتب هنا..." dir="rtl" autocomplete="off" autocorrect="off"
+          autocapitalize="off" spellcheck="false"></textarea>
         <div id="suggestions"></div>
 
         <div id="search-actions">
-          <button id="btn-copy" class="search-btn action-btn">نسخ النص</button>
-          <button id="btn-clear" class="search-btn danger-btn">حذف الكل</button>
-          <button id="btn-google" class="search-btn">بحث Google</button>
-          <button id="btn-youtube" class="search-btn">بحث YouTube</button>
-          <button id="btn-chatgpt" class="search-btn ai-btn">ChatGPT</button>
-          <button id="btn-deepseek" class="search-btn ai-btn">DeepSeek</button>
+          <button id="btn-copy" class="search-btn action-btn">📋 نسخ</button>
+          <button id="btn-clear" class="search-btn danger-btn">🗑️ مسح</button>
+          <button id="btn-google" class="search-btn">🔍 Google</button>
+          <button id="btn-youtube" class="search-btn">▶️ YouTube</button>
+          <button id="btn-chatgpt" class="search-btn ai-btn">🤖 ChatGPT</button>
+          <button id="btn-deepseek" class="search-btn ai-btn">🧠 DeepSeek</button>
         </div>
       </div>
 
-      <div id="keyboard" class="keyboard"></div>
+      <div id="keyboard" class="keyboard" role="application" aria-label="لوحة مفاتيح عربية"></div>
     </main>
+
+    <footer style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+      <p>AR-KEY v2.0 • اضغط ⇧ للتشكيل • ⚙️ للإعدادات</p>
+    </footer>
   </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 

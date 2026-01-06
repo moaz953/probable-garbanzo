@@ -1,45 +1,468 @@
+/* ============================================================================
+   AR-KEY Professional Arabic Keyboard - Stylesheet
+   Version 2.0.0
+   ============================================================================ */
+
+/* ============================================================================
+   CSS CUSTOM PROPERTIES (Theme Variables)
+   ============================================================================ */
+
 :root {
+  /* Key sizes */
   --key-size: 2.2cm;
-  --gap-size: 0.6cm;
-  /* Increased from 0.4cm for better mouse accuracy */
+  --gap-size: 0.5cm;
   --font-size: 0.9cm;
-  --bg-color: #1a1a1a;
-  --key-bg: #333;
-  --key-color: #fff;
-  --hover-scale: 1.1;
-  --active-bg: #555;
-  --primary-color: #646cff;
+
+  /* Base colors */
+  --primary-color: #6366f1;
+  --primary-hover: #4f46e5;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+
+  /* Timing */
+  --transition-fast: 0.1s;
+  --transition-normal: 0.2s;
+  --transition-slow: 0.3s;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.4);
+
+  /* Border radius */
+  --radius-sm: 0.4rem;
+  --radius-md: 0.8rem;
+  --radius-lg: 1.2rem;
+  --radius-full: 9999px;
 }
 
-/* ... existing body rules ... */
+/* Dark Theme (Default) */
+[data-theme="dark"],
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #252540;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #6b6b80;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(30, 30, 50, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --key-bg: linear-gradient(145deg, #2a2a45, #1f1f35);
+  --key-active-bg: linear-gradient(145deg, #3a3a60, #2f2f50);
+  --key-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
 
-/* Key Popup Effect */
+/* Light Theme */
+[data-theme="light"] {
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e8e8ed;
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a4a5a;
+  --text-muted: #8a8a9a;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --key-bg: linear-gradient(145deg, #ffffff, #e8e8ed);
+  --key-active-bg: linear-gradient(145deg, #e0e0e5, #d0d0d8);
+  --key-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================================================
+   RESET & BASE STYLES
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  background-image:
+    radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+  color: var(--text-primary);
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  transition: background-color var(--transition-slow);
+}
+
+/* ============================================================================
+   MAIN CONTAINER
+   ============================================================================ */
+
+#app {
+  width: 100%;
+  max-width: 900px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+header {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+header h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-color), #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+/* ============================================================================
+   OUTPUT CONTAINER
+   ============================================================================ */
+
+.output-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+textarea#output {
+  width: 100%;
+  height: 100px;
+  padding: 1rem;
+  font-size: 1.4rem;
+  line-height: 1.6;
+  font-family: 'Noto Sans Arabic', 'SF Pro Arabic', system-ui, sans-serif;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-color);
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  resize: none;
+  transition: all var(--transition-normal);
+}
+
+textarea#output::placeholder {
+  color: var(--text-muted);
+}
+
+textarea#output:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Character Counter */
+.char-counter {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 1rem;
+}
+
+.char-counter span {
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+}
+
+/* ============================================================================
+   SUGGESTIONS
+   ============================================================================ */
+
+#suggestions {
+  display: flex;
+  gap: 0.75rem;
+  min-height: 2.5rem;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.suggestion-chip {
+  background: var(--glass-bg);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid var(--glass-border);
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  user-select: none;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.suggestion-chip:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.suggestion-chip:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   ACTION BUTTONS
+   ============================================================================ */
+
+#search-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.search-btn {
+  padding: 0.7rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background: var(--glass-bg);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.search-btn:active {
+  transform: translateY(0);
+}
+
+/* Action Button Variants */
+.action-btn:hover {
+  background: var(--success-color);
+  color: white;
+  border-color: var(--success-color);
+}
+
+.ai-btn {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.2));
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.ai-btn:hover {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+}
+
+.danger-btn:hover {
+  background: var(--danger-color);
+  color: white;
+  border-color: var(--danger-color);
+}
+
+/* ============================================================================
+   KEYBOARD - GLASSMORPHISM DESIGN
+   ============================================================================ */
+
+.keyboard {
+  direction: ltr;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-size);
+  align-items: center;
+  padding: 1.2rem;
+  border-radius: var(--radius-lg);
+
+  /* Glassmorphism */
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+
+  /* Subtle inner glow */
+  position: relative;
+  overflow: hidden;
+}
+
+.keyboard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.keyboard-row {
+  display: flex;
+  gap: var(--gap-size);
+  justify-content: center;
+}
+
+.keyboard-row.control-row {
+  margin-top: 0.3rem;
+}
+
+/* ============================================================================
+   KEYS - PREMIUM DESIGN
+   ============================================================================ */
+
+.key {
+  width: var(--key-size);
+  height: var(--key-size);
+  font-size: var(--font-size);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  background: var(--key-bg);
+  color: var(--text-primary);
+  box-shadow: var(--key-shadow);
+  transition: all var(--transition-fast) ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ripple effect container */
+.key::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: width 0.4s, height 0.4s, opacity 0.4s;
+}
+
+.key:hover {
+  transform: scale(1.08) translateY(-2px);
+  z-index: 10;
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.key:active,
+.key.active {
+  transform: scale(0.95);
+  background: var(--key-active-bg);
+}
+
+.key.active::after {
+  width: 150%;
+  height: 150%;
+  opacity: 0;
+}
+
+/* Special Keys */
+.key.special {
+  width: auto;
+  padding: 0 0.8cm;
+  min-width: var(--key-size);
+  font-size: calc(var(--font-size) * 0.9);
+}
+
+/* Space Key */
+.key.space {
+  width: calc(var(--key-size) * 4);
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.key.space:hover {
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+}
+
+.space-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+}
+
+/* Shift Key */
+.key.shift-key {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(234, 88, 12, 0.2));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.key.shift-key:hover,
+.key.shift-key.active-toggle {
+  background: linear-gradient(145deg, #f59e0b, #ea580c);
+  color: white;
+}
+
+/* Backspace Key */
+.key.backspace-key {
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.key.backspace-key:hover {
+  background: linear-gradient(145deg, #ef4444, #dc2626);
+  color: white;
+}
+
+/* Settings Key */
+.key.settings-key {
+  font-size: 1.2rem;
+}
+
+/* ============================================================================
+   KEY POPUP
+   ============================================================================ */
+
 .key-popup {
   position: absolute;
   top: -2.5cm;
-  /* Above the key */
   left: 50%;
   transform: translateX(-50%);
   width: 2.5cm;
   height: 2.5cm;
-  background: var(--primary-color);
+  background: linear-gradient(145deg, var(--primary-color), #8b5cf6);
   color: white;
-  border-radius: 50% 50% 5px 5px;
+  border-radius: 50% 50% var(--radius-sm) var(--radius-sm);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.2cm;
-  font-weight: bold;
+  font-size: 1.3cm;
+  font-weight: 600;
   pointer-events: none;
-  /* Let clicks pass through */
   z-index: 100;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  animation: popIn 0.1s ease-out;
+  box-shadow: var(--shadow-lg);
+  animation: popIn 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes popIn {
   from {
-    transform: translateX(-50%) scale(0.5);
+    transform: translateX(-50%) scale(0.3);
     opacity: 0;
   }
 
@@ -49,163 +472,34 @@
   }
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: var(--bg-color);
-  color: #fff;
-  font-family: system-ui, -apple-system, sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-x: hidden;
-  /* Prevent horiz scroll if possible, but allow for overflow content */
-}
+/* ============================================================================
+   TOAST NOTIFICATION
+   ============================================================================ */
 
-#app {
-  width: 100%;
-  max-width: 100vw;
-  padding: 0.5rem;
-  /* Reduced padding */
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  /* Reduced gap from 2rem */
-}
-
-/* ... headers ... */
-
-.output-container {
-  width: 100%;
-  max-width: 800px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  /* Reduced gap */
-  align-items: center;
-}
-
-textarea#output {
-  width: 100%;
-  height: 80px;
-  /* Reduced from 150px ("makes the place smaller") */
-  padding: 0.8rem;
-  font-size: 1.5rem;
-  border-radius: 0.5rem;
-  border: 2px solid #444;
-  background: #222;
-  color: #fff;
-  resize: none;
-  font-family: inherit;
-}
-
-textarea#output:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
-#suggestions {
-  display: flex;
-  gap: 1rem;
-  height: 2rem;
-  width: 100%;
-  justify-content: center;
-}
-
-.suggestion-chip {
-  background: #444;
-  padding: 0.2rem 1rem;
-  border-radius: 1rem;
-  cursor: pointer;
-  user-select: none;
-}
-
-.suggestion-chip:hover {
-  background: var(--primary-color);
-}
-
-#search-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  width: 100%;
-}
-
-.search-btn {
-  padding: 0.8rem 1.5rem;
-  font-size: 1rem;
-  background: #333;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.search-btn:hover {
-  background: var(--primary-color);
-  transform: translateY(-2px);
-}
-
-.action-btn {
-  background: #444;
-  /* Differentiate action buttons */
-  border-color: #666;
-}
-
-.action-btn:hover {
-  background: #2ecc71;
-  /* Green for success action */
-}
-
-.ai-btn {
-  background: #5b4b8a;
-  border-color: #7b6b9a;
-}
-
-.ai-btn:hover {
-  background: #8e44ad;
-}
-
-.danger-btn {
-  background: #c0392b;
-  border-color: #e74c3c;
-}
-
-.danger-btn:hover {
-  background: #e74c3c;
-}
-
-/* Toast Notification */
 .toast {
   position: fixed;
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(46, 204, 113, 0.9);
+  background: linear-gradient(135deg, var(--success-color), #059669);
   color: white;
   padding: 1rem 2rem;
-  border-radius: 2rem;
-  font-size: 1.2rem;
-  font-weight: bold;
+  border-radius: var(--radius-full);
+  font-size: 1rem;
+  font-weight: 500;
   z-index: 2000;
-  animation: fadeInOut 2s forwards;
+  animation: toastSlide 2s forwards;
   pointer-events: none;
+  box-shadow: var(--shadow-lg);
 }
 
-@keyframes fadeInOut {
+@keyframes toastSlide {
   0% {
     opacity: 0;
     transform: translate(-50%, 20px);
   }
 
-  10% {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-
+  10%,
   80% {
     opacity: 1;
     transform: translate(-50%, 0);
@@ -217,91 +511,209 @@ textarea#output:focus {
   }
 }
 
-/* Keyboard Styles */
-.keyboard {
-  display: grid;
-  /* Use auto-fit or specific columns. For Arabic layout we usually have 11-12 keys per row. 
-     We'll use specific template columns based on the layout logic or just let grid handle it 
-     if we define rows. The prompt proposed grid-template-columns: repeat(10, 2.2cm); 
-     We will adjust dynamically in JS or make it flexible here. 
-     Let's use a max-width container and flex wrap or grid.
-     Actually, a strict grid is better for "muscle memory".
-     Let's assume the rows have varying key counts.
-     We will use flexbox for rows to allow centering, or a grid.
-     The prompt example used grid. Let's try flex rows for better centering of varying row lengths.
-  */
-  /* Force LTR so the first key in array (Top-Left) appears on the Left */
-  direction: ltr;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-size);
-  align-items: center;
-  background: #000;
-  padding: 1rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
+/* ============================================================================
+   SETTINGS PANEL
+   ============================================================================ */
 
-.keyboard-row {
-  display: flex;
-  gap: var(--gap-size);
-  justify-content: center;
-}
-
-.key {
-  width: var(--key-size);
-  height: var(--key-size);
-  font-size: var(--font-size);
-  border-radius: 0.4cm;
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.settings-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-panel h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  width: 50px;
+  height: 28px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
   cursor: pointer;
-  background: var(--key-bg);
-  color: var(--key-color);
-  user-select: none;
-  transition: transform 0.1s, background-color 0.1s;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  inset: 0;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  transition: var(--transition-normal);
 }
 
-.key:hover {
-  transform: scale(var(--hover-scale));
-  z-index: 10;
-  background: #444;
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
-.key:active {
-  transform: scale(0.95);
-  background: var(--active-bg);
+.toggle input:checked+.toggle-slider {
+  background: var(--primary-color);
 }
 
-.key.special {
-  /* wide keys for space, enter etc */
-  width: auto;
-  padding: 0 1cm;
-  min-width: var(--key-size);
+.toggle input:checked+.toggle-slider::before {
+  transform: translateX(22px);
 }
 
-.key.space {
-  width: calc(var(--key-size) * 5);
+.close-settings {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.8rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-normal);
 }
 
-/* Mobile Tweaks */
-@media (max-width: 600px) {
+.close-settings:hover {
+  background: var(--primary-hover);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
   :root {
-    /* Slightly smaller on very small screens to fit, 
-       but we try to keep physical size logic. 
-       If screen < keyboard width, we need to scroll or shrink.
-       The prompt priority is physical size.
-       We will allow horizontal scroll if needed for strict physical size.
-    */
+    --key-size: 2cm;
+    --gap-size: 0.4cm;
+    --font-size: 0.8cm;
+  }
+
+  #app {
+    padding: 0.5rem;
+    gap: 1rem;
+  }
+
+  .key.space {
+    width: calc(var(--key-size) * 3.5);
+  }
+
+  #search-actions {
+    gap: 0.5rem;
+  }
+
+  .search-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --key-size: 1.7cm;
+    --gap-size: 0.3cm;
+    --font-size: 0.7cm;
+  }
+
+  textarea#output {
+    height: 80px;
+    font-size: 1.2rem;
   }
 
   .keyboard {
-    overflow-x: auto;
+    padding: 0.8rem;
     max-width: 100%;
-    justify-content: flex-start;
-    /* Align left (rtl: right) so we can scroll */
-    padding-bottom: 2rem;
+    overflow-x: auto;
+  }
+
+  .key.space {
+    width: calc(var(--key-size) * 3);
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High Contrast */
+@media (prefers-contrast: high) {
+  .key {
+    border: 2px solid var(--text-primary);
   }
 }
