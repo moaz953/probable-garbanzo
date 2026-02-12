@@ -1,7 +1,10 @@
 {
   "name": "ar-key",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.1.0",
+  "description": "لوحة مفاتيح عربية احترافية على الويب مع تشكيل ذكي واقتراحات نصية",
+  "author": "AR-KEY Team",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

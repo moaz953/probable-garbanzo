@@ -115,6 +115,43 @@ body {
 header {
   text-align: center;
   padding: 1rem 0;
+  width: 100%;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.header-title {
+  text-align: right;
+}
+
+.header-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-btn:hover {
+  background: var(--primary-color);
+  transform: scale(1.05);
+}
+
+.header-btn.muted {
+  opacity: 0.5;
 }
 
 header h1 {
@@ -280,6 +317,22 @@ textarea#output:focus {
   border-color: var(--danger-color);
 }
 
+/* Wikipedia Button */
+.wiki-btn {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.wiki-btn:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+/* Number Row Styling */
+.keyboard-row:first-child .key {
+  font-size: calc(var(--font-size) * 0.85);
+}
+
 /* ============================================================================
    KEYBOARD - GLASSMORPHISM DESIGN
    ============================================================================ */
@@ -347,6 +400,13 @@ textarea#output:focus {
   transition: all var(--transition-fast) ease-out;
   position: relative;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.key:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 /* Ripple effect container */

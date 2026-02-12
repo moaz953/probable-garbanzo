@@ -2,7 +2,7 @@
  * AR-KEY Main Application
  * Professional Arabic Virtual Keyboard Application
  * 
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 import './style.css';
@@ -75,7 +75,7 @@ const deleteWord = () => {
 
   const trimmedBefore = textBefore.trimEnd();
   const lastSpace = trimmedBefore.lastIndexOf(' ');
-  const newStart = lastSpace === -1 ? 0 : lastSpace;
+  const newStart = lastSpace === -1 ? 0 : lastSpace + 1;
 
   output.value = val.substring(0, newStart) + textAfter;
   output.selectionStart = output.selectionEnd = newStart;
@@ -119,17 +119,24 @@ const renderSuggestions = (list, currentWord) => {
 
     chip.addEventListener('click', () => {
       const text = output.value;
+      const cursorPos = output.selectionStart;
 
       if (currentWord) {
-        // Replace current partial word
-        const lastSpaceIndex = text.lastIndexOf(' ');
-        output.value = (lastSpaceIndex === -1 ? '' : text.substring(0, lastSpaceIndex + 1)) + word + ' ';
+        // Replace current partial word at cursor position
+        const textBeforeCursor = text.substring(0, cursorPos);
+        const textAfterCursor = text.substring(cursorPos);
+        const lastSpaceIndex = textBeforeCursor.lastIndexOf(' ');
+        const before = lastSpaceIndex === -1 ? '' : textBeforeCursor.substring(0, lastSpaceIndex + 1);
+        output.value = before + word + ' ' + textAfterCursor;
+        output.selectionStart = output.selectionEnd = before.length + word.length + 1;
       } else {
-        // Append word
-        output.value = text + word + ' ';
+        // Insert word at cursor position
+        const textBeforeCursor = text.substring(0, cursorPos);
+        const textAfterCursor = text.substring(cursorPos);
+        output.value = textBeforeCursor + word + ' ' + textAfterCursor;
+        output.selectionStart = output.selectionEnd = cursorPos + word.length + 1;
       }
 
-      output.selectionStart = output.selectionEnd = output.value.length;
       suggestionsContainer.innerHTML = '';
       updateCharCount();
       output.focus();
@@ -167,6 +174,8 @@ document.getElementById('btn-copy')?.addEventListener('click', () => {
   if (text) {
     navigator.clipboard.writeText(text).then(() => {
       showToast('✓ تم النسخ');
+    }).catch(() => {
+      showToast('⚠️ فشل النسخ');
     });
   }
 });
@@ -183,7 +192,7 @@ document.getElementById('btn-clear')?.addEventListener('click', () => {
 document.getElementById('btn-google')?.addEventListener('click', () => {
   const query = output.value.trim();
   if (query) {
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
   }
 });
 
@@ -191,7 +200,15 @@ document.getElementById('btn-google')?.addEventListener('click', () => {
 document.getElementById('btn-youtube')?.addEventListener('click', () => {
   const query = output.value.trim();
   if (query) {
-    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
+  }
+});
+
+// Wikipedia Search (Arabic)
+document.getElementById('btn-wikipedia')?.addEventListener('click', () => {
+  const query = output.value.trim();
+  if (query) {
+    window.open(`https://ar.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
   }
 });
 
@@ -210,10 +227,13 @@ const openAI = (url, useParam = false) => {
   if (text) {
     navigator.clipboard.writeText(text).then(() => {
       showToast('📋 تم النسخ! الصق النص هناك');
-      setTimeout(() => window.open(finalUrl, '_blank'), 400);
+      setTimeout(() => window.open(finalUrl, '_blank', 'noopener,noreferrer'), 400);
+    }).catch(() => {
+      showToast('⚠️ فشل النسخ');
+      window.open(finalUrl, '_blank', 'noopener,noreferrer');
     });
   } else {
-    window.open(finalUrl, '_blank');
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   }
 };
 
@@ -236,6 +256,8 @@ const showToast = (message) => {
 
   const toast = document.createElement('div');
   toast.className = 'toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
   toast.innerText = message;
   document.body.appendChild(toast);
 
@@ -306,6 +328,15 @@ const createSettingsPanel = (keyboard) => {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+
+  // Close on Escape key
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', handleEsc);
+    }
+  };
+  document.addEventListener('keydown', handleEsc);
 };
 
 // ============================================================================
@@ -326,6 +357,36 @@ keyboard.on('openSettings', () => {
 });
 
 // ============================================================================
+// QUICK SOUND TOGGLE
+// ============================================================================
+
+const soundToggle = document.getElementById('quick-sound-toggle');
+
+const updateSoundToggleUI = () => {
+  const settings = keyboard.getSettings();
+  if (soundToggle) {
+    soundToggle.textContent = settings.soundEnabled ? '🔊' : '🔇';
+    soundToggle.classList.toggle('muted', !settings.soundEnabled);
+  }
+};
+
+soundToggle?.addEventListener('click', () => {
+  const settings = keyboard.getSettings();
+  const newState = !settings.soundEnabled;
+  keyboard.setSound(newState);
+  updateSoundToggleUI();
+  showToast(newState ? '🔊 الصوت مفعل' : '🔇 الصوت مغلق');
+});
+
+// Update UI on settings change
+keyboard.on('settingsChanged', ({ key }) => {
+  if (key === 'soundEnabled') updateSoundToggleUI();
+});
+
+// Initialize sound toggle UI
+updateSoundToggleUI();
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 
@@ -333,6 +394,8 @@ keyboard.on('openSettings', () => {
 const charCounter = document.createElement('div');
 charCounter.id = 'char-counter';
 charCounter.className = 'char-counter';
+charCounter.setAttribute('role', 'status');
+charCounter.setAttribute('aria-live', 'polite');
 document.querySelector('.output-container')?.appendChild(charCounter);
 
 // Initial updates

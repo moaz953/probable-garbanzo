@@ -3,7 +3,7 @@
  * A feature-rich, accessible Arabic keyboard with haptic feedback,
  * shift layer for diacritics, theming, and customizable settings.
  * 
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 // ============================================================================
@@ -78,11 +78,13 @@ export class Keyboard extends EventEmitter {
         // Keyboard layouts
         this.layouts = {
             primary: [
+                ["١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩", "0"],
                 ["ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "د"],
                 ["ش", "س", "ي", "ب", "ل", "ا", "ت", "ن", "م", "ك", "ط"],
                 ["ذ", "ئ", "ء", "ؤ", "ر", "لا", "ى", "ة", "و", "ز", "ظ"]
             ],
             shift: [
+                ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
                 ["َ", "ً", "ُ", "ٌ", "ِ", "ٍ", "ْ", "ّ", "»", "«", "÷", "×"],
                 ["{", "}", "[", "]", "،", "؛", "'", "\"", "؟", "!", ":"],
                 ["~", "٪", "@", "#", "$", "ـ", "-", "+", "=", "(", ")"]
@@ -113,8 +115,8 @@ export class Keyboard extends EventEmitter {
             if (AudioContextClass) {
                 this.audioContext = new AudioContextClass();
             }
-        } catch (e) {
-            console.warn("AudioContext initialization failed:", e);
+        } catch {
+            // AudioContext not available in this environment
         }
     }
 
@@ -134,8 +136,8 @@ export class Keyboard extends EventEmitter {
     saveSettings() {
         try {
             localStorage.setItem('ar-key-settings', JSON.stringify(this.settings));
-        } catch (e) {
-            console.warn("Failed to save settings:", e);
+        } catch {
+            // Settings save failed (e.g., localStorage unavailable)
         }
     }
 
@@ -248,7 +250,8 @@ export class Keyboard extends EventEmitter {
         const shiftKey = this.createFunctionKey('⇧', 'shift-key', () => {
             this.toggleShift();
         });
-        shiftKey.setAttribute('aria-pressed', this.isShiftActive);
+        shiftKey.setAttribute('aria-pressed', String(this.isShiftActive));
+        shiftKey.setAttribute('aria-label', this.isShiftActive ? 'إلغاء التشكيل' : 'التشكيل والرموز');
         shiftKey.title = this.isShiftActive ? 'إلغاء التشكيل' : 'التشكيل والرموز';
         if (this.isShiftActive) shiftKey.classList.add('active-toggle');
 
@@ -260,18 +263,21 @@ export class Keyboard extends EventEmitter {
             this.handleInput(' ');
         });
         spaceKey.innerHTML = '<span class="space-label">مسافة</span>';
+        spaceKey.setAttribute('aria-label', 'مسافة');
         spaceKey.title = 'مسافة';
 
         // Enter Key
         const enterKey = this.createFunctionKey('↵', '', () => {
             this.callbacks.onEnter();
         });
+        enterKey.setAttribute('aria-label', 'سطر جديد');
         enterKey.title = 'سطر جديد';
 
         // Settings Key
         const settingsKey = this.createFunctionKey('⚙️', 'settings-key', () => {
             this.emit('openSettings');
         });
+        settingsKey.setAttribute('aria-label', 'الإعدادات');
         settingsKey.title = 'الإعدادات';
 
         controlRow.append(shiftKey, bkspKey, spaceKey, enterKey, settingsKey);
@@ -388,17 +394,20 @@ export class Keyboard extends EventEmitter {
     // ========================================================================
 
     setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
+        this._onKeyDown = (e) => {
             if (e.key === 'Shift') {
                 if (!this.isShiftActive) this.toggleShift();
             }
-        });
+        };
 
-        document.addEventListener('keyup', (e) => {
+        this._onKeyUp = (e) => {
             if (e.key === 'Shift') {
                 if (this.isShiftActive) this.toggleShift();
             }
-        });
+        };
+
+        document.addEventListener('keydown', this._onKeyDown);
+        document.addEventListener('keyup', this._onKeyUp);
     }
 
     // ========================================================================
@@ -500,6 +509,8 @@ export class Keyboard extends EventEmitter {
         if (this.audioContext) {
             this.audioContext.close();
         }
+        if (this._onKeyDown) document.removeEventListener('keydown', this._onKeyDown);
+        if (this._onKeyUp) document.removeEventListener('keyup', this._onKeyUp);
         this.container.innerHTML = '';
         this.events = {};
     }

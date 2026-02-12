@@ -19,11 +19,39 @@
   <meta property="og:description" content="لوحة مفاتيح عربية احترافية مع تشكيل واقتراحات ذكية" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://arabickeypro.vercel.app/" />
+  <meta property="og:image" content="https://arabickeypro.vercel.app/vite.svg" />
+  <meta property="og:locale" content="ar_AR" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="AR-KEY | كيبورد عربي ذكي" />
+  <meta name="twitter:description" content="لوحة مفاتيح عربية احترافية مع تشكيل واقتراحات ذكية" />
+  <meta name="twitter:image" content="https://arabickeypro.vercel.app/vite.svg" />
 
   <!-- PWA -->
   <meta name="theme-color" content="#6366f1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/vite.svg" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "AR-KEY",
+    "description": "لوحة مفاتيح عربية احترافية على الويب مع تشكيل ذكي واقتراحات نصية",
+    "url": "https://arabickeypro.vercel.app/",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Web",
+    "inLanguage": "ar",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -36,8 +64,15 @@
 <body>
   <div id="app">
     <header>
-      <h1>🔤 AR-KEY</h1>
-      <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.3rem;">لوحة مفاتيح عربية ذكية</p>
+      <div class="header-content">
+        <div class="header-title">
+          <h1>🔤 AR-KEY</h1>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.3rem;">لوحة مفاتيح عربية ذكية</p>
+        </div>
+        <button id="quick-sound-toggle" class="header-btn" title="تشغيل/إيقاف الصوت" aria-label="تبديل الصوت">
+          🔊
+        </button>
+      </div>
     </header>
 
     <main>
@@ -51,6 +86,7 @@
           <button id="btn-clear" class="search-btn danger-btn">🗑️ مسح</button>
           <button id="btn-google" class="search-btn">🔍 Google</button>
           <button id="btn-youtube" class="search-btn">▶️ YouTube</button>
+          <button id="btn-wikipedia" class="search-btn wiki-btn">📖 Wikipedia</button>
           <button id="btn-chatgpt" class="search-btn ai-btn">🤖 ChatGPT</button>
           <button id="btn-deepseek" class="search-btn ai-btn">🧠 DeepSeek</button>
         </div>
@@ -60,7 +96,7 @@
     </main>
 
     <footer style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
-      <p>AR-KEY v2.0 • اضغط ⇧ للتشكيل • ⚙️ للإعدادات</p>
+      <p>AR-KEY v2.1 • اضغط ⇧ للتشكيل والأرقام • ⚙️ للإعدادات</p>
     </footer>
   </div>
 
